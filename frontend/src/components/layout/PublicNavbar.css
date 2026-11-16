@@ -1,0 +1,119 @@
+.pub-nav-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding-top: 14px;
+  transition: padding var(--transition-base);
+}
+
+.pub-nav-wrap.is-scrolled {
+  padding-top: 8px;
+}
+
+.pub-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+}
+
+.pub-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pub-nav__links {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.pub-nav__link {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 8px 11px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.pub-nav__link:hover,
+.pub-nav__link.is-active {
+  background: rgba(11, 79, 138, 0.08);
+  color: var(--color-primary);
+}
+
+.pub-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pub-nav__toggle {
+  display: none;
+  border: none;
+  background: rgba(11, 79, 138, 0.08);
+  color: var(--color-primary-deep);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pub-nav-mobile {
+  margin-top: 10px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pub-nav-mobile__link {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.pub-nav-mobile__link:hover {
+  background: rgba(11, 79, 138, 0.08);
+  color: var(--color-primary);
+}
+
+.pub-nav-mobile__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 1120px) {
+  .pub-nav__links,
+  .pub-nav__actions {
+    display: none;
+  }
+  .pub-nav__toggle {
+    display: inline-flex;
+  }
+}

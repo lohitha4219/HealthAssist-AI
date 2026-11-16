@@ -1,0 +1,79 @@
+.treatments-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.treatments-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.treatments-nav__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.treatments-nav__btn:hover {
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--color-primary);
+}
+
+.treatments-nav__btn.is-active {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: #ffffff;
+}
+
+.treatments-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.treatments-sections h3 {
+  margin: 0 0 8px;
+  font-size: 0.96rem;
+  color: var(--color-primary-deep);
+}
+
+.treatments-sections ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.treatments-sections li {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 0.89rem;
+  color: var(--text-secondary);
+}
+
+.treatments-sections li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--color-primary);
+}
+
+@media (max-width: 900px) {
+  .treatments-layout,
+  .treatments-sections {
+    grid-template-columns: 1fr;
+  }
+}

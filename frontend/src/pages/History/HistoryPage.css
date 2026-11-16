@@ -1,0 +1,66 @@
+.history-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.history-filter-bar .field-select,
+.history-filter-bar input[type='date'] {
+  width: auto;
+  min-width: 150px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+}
+
+.history-row__info {
+  min-width: 0;
+}
+
+.history-row__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.history-row__title {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.history-row__meta {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.history-row__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .history-filter-bar .field-select,
+  .history-filter-bar input[type='date'] {
+    width: 100%;
+  }
+  .history-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

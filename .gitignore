@@ -1,0 +1,43 @@
+# Environments & Secrets
+.env
+backend/.env
+frontend/.env
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+*.log
+
+# Storage & Local Databases
+backend/storage/reports/*
+!backend/storage/reports/.gitkeep
+backend/backups/
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+
+# Local AI Models (GGUF weights)
+/models/
+backend/models/
+!backend/app/models/
+*.gguf
+
+# OS & Editors
+.DS_Store
+.vscode/
+.idea/
