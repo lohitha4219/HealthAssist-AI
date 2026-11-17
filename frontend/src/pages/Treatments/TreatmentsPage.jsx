@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Building2, CheckCircle2, HeartPulse, ShieldAlert } from 'lucide-react';
 import { PublicNavbar } from '../../components/layout/PublicNavbar';
 import { Footer } from '../../components/layout/Footer';
-import { GlassCard, LoadingSpinner, PageHeader } from '../../components/common/CommonUI';
+import { EmptyState, GlassCard, LoadingSpinner, PageHeader } from '../../components/common/CommonUI';
 import { healthcareService } from '../../services/healthcareService';
 import { extractApiError } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContext';
@@ -53,6 +53,14 @@ export function TreatmentsPage() {
         <LoadingSpinner label="Loading specialty guides..." />
       ) : (
         <div className="treatments-layout">
+          {items.length === 0 ? (
+            <EmptyState
+              icon={HeartPulse}
+              title="No treatment guides published yet"
+              description="The treatment library is connected to the live database, but no reviewed education guides have been published yet. Only reviewed content is displayed here; sample medical content is not generated."
+            />
+          ) : (
+          <>
           <GlassCard padding="14px" className="treatments-nav">
             {items.map((item) => (
               <button
@@ -159,6 +167,8 @@ export function TreatmentsPage() {
                 content only; does not diagnose conditions or prescribe treatment.
               </p>
             </GlassCard>
+          )}
+          </>
           )}
         </div>
       )}

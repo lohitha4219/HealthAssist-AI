@@ -146,8 +146,12 @@ export function DoctorsPage() {
       ) : doctors.length === 0 ? (
         <EmptyState
           icon={UserCheck}
-          title="No verified doctors match your criteria"
-          description="Only verified doctors onboarded via invitation appear here. Clear filters or check back once doctors complete onboarding."
+          title="No verified doctors available"
+          description={
+            search.trim() || specialization !== 'all' || district !== 'all' || availableDate || availableTime
+              ? 'No verified doctors match the selected search, specialty, district, or availability. Try clearing some filters.'
+              : 'No verified doctor profiles have been onboarded yet. Only doctors who complete the secure invitation and verification process appear here; sample profiles are not generated.'
+          }
           action={
             <Link to="/hospitals" className="btn btn--primary btn--sm">
               Browse Hospitals

@@ -177,8 +177,12 @@ export function HospitalsPage({ embedded = false }) {
       ) : items.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title="No matching hospitals found"
-          description="Try broadening your district, city, specialty, or facility filters."
+          title="No hospitals available"
+          description={
+            search.trim() || district !== 'all' || city !== 'all' || specialization !== 'all' || facility !== 'all'
+              ? 'No published hospitals match the selected filters. Try clearing your search and filters.'
+              : 'No hospitals have been published in the directory yet. Only real records added through the secure hospital-maintenance workflow appear here; sample listings are not generated.'
+          }
         />
       ) : (
         <>
