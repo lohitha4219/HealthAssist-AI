@@ -37,12 +37,12 @@ class Settings(BaseSettings):
 
     # AI Provider: auto | gemini | openai_compatible | llamacpp | ollama
     AI_PROVIDER: str = "auto"
-    AI_TIMEOUT_SECONDS: int = 90
+    AI_TIMEOUT_SECONDS: int = 45
     AI_MAX_CONTEXT_MESSAGES: int = 14
 
     # Google Gemini API (Recommended Cloud Provider - official google-genai SDK)
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GEMINI_MODEL: str = "gemini-3.1-flash-lite"
 
     # llama.cpp local server
     LLAMACPP_BASE_URL: str = "http://127.0.0.1:8080"
@@ -81,8 +81,8 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_gemini_model(cls, value: Optional[str]) -> str:
         val = (value or "").strip().lower()
-        if not val or val in ("gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5", "gemini-2.0"):
-            return "gemini-3.5-flash"
+        if not val or val in ("gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5", "gemini-2.0", "gemini-1.5-flash"):
+            return "gemini-3.1-flash-lite"
         return val
 
     @field_validator("DATABASE_URL")

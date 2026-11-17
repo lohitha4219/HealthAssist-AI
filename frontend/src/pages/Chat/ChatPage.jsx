@@ -3,11 +3,13 @@ import {
   AlertTriangle,
   Bot,
   Check,
+  Copy,
   Edit3,
   MessageSquarePlus,
   PanelLeftOpen,
   RefreshCw,
   Send,
+  ShieldCheck,
   Sparkles,
   Trash2,
   User as UserIcon,
@@ -42,10 +44,22 @@ export function ChatPage() {
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   const messagesEndRef = useRef(null);
   const skipNextLoadRef = useRef(null);
   const { showToast } = useToast();
+
+  const handleCopyMessage = async (msgId, text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(msgId);
+      setTimeout(() => setCopiedId(null), 2000);
+      showToast('Response copied to clipboard', 'success');
+    } catch {
+      showToast('Failed to copy response', 'error');
+    }
+  };
 
   const refreshAIHealth = async () => {
     try {
@@ -168,9 +182,9 @@ export function ChatPage() {
 
     setErrorMsg('');
     setSending(true);
+    let targetConvId = activeId;
 
     try {
-      let targetConvId = activeId;
       if (!targetConvId) {
         const created = await chatService.createConversation();
         skipNextLoadRef.current = created.id;
@@ -270,12 +284,21 @@ export function ChatPage() {
         chatService.listConversations().then(setConversations).catch(() => {});
       }
     } catch (err) {
-      if (promptText === undefined) {
-        setInput(text);
-      }
+      // Preserve user message in input field and preserve user message in chat
+      setInput(text);
       setMessages((prev) =>
-        prev.filter((m) => !String(m.id).startsWith('temp-') && m.id !== 'streaming-assistant')
+        prev.filter((m) => m.id !== 'streaming-assistant')
       );
+      if (targetConvId) {
+        chatService
+          .getConversation(targetConvId)
+          .then((d) => {
+            if (d && d.messages && d.messages.length > 0) {
+              setMessages(d.messages);
+            }
+          })
+          .catch(() => {});
+      }
       const parsedError = extractApiError(
         err,
         'AI Assistant could not respond. Please configure GEMINI_API_KEY in backend/.env or check your cloud provider.'
@@ -298,6 +321,8 @@ export function ChatPage() {
   if (loadingInit) {
     return <LoadingSpinner label="Loading AI Chat Assistant..." />;
   }
+
+  const currentConv = conversations.find((c) => c.id === activeId);
 
   return (
     <div className="chat-page animate-fade-up">
@@ -452,6 +477,29 @@ export function ChatPage() {
 
         {/* Main Chat Area */}
         <GlassCard padding="0" className="chat-main">
+          <div className="chat-header-bar">
+            <div className="chat-header-info">
+              <span className="chat-header-title">
+                {currentConv ? currentConv.title : 'Healthcare Consultation'}
+              </span>
+              <span className="chat-header-subtitle">
+                Context-aware symptom triage, lab report guidance &amp; Andhra Pradesh healthcare network
+              </span>
+            </div>
+            <div className="chat-header-badges">
+              <span className="badge badge--success" style={{ gap: 6 }}>
+                <span className="pulse-indicator">
+                  <span className="pulse-indicator__ping" />
+                  <span className="pulse-indicator__dot" />
+                </span>
+                {aiHealth?.model || 'Gemini Cloud AI'}
+              </span>
+              <span className="badge badge--cyan">
+                <ShieldCheck size={13} /> Private &amp; Isolated
+              </span>
+            </div>
+          </div>
+
           <div className="chat-messages">
             {loadingMsgs ? (
               <LoadingSpinner label="Loading messages..." />
@@ -460,9 +508,9 @@ export function ChatPage() {
                 <div className="chat-welcome__icon">
                   <Sparkles size={26} />
                 </div>
-                <h3>Ask Anything — General Knowledge, Code, or Health Info</h3>
+                <h3>Ask Anything &mdash; Symptoms, Reports, or Doctor Inquiries</h3>
                 <p>
-                  Conversations persist in PostgreSQL and keep follow-up context across sessions.
+                  Conversations persist in your private PostgreSQL history with complete follow-up continuity.
                 </p>
                 <div className="chat-prompts-grid">
                   {EXAMPLE_PROMPTS.map((prompt) => (
@@ -491,7 +539,25 @@ export function ChatPage() {
                     <div className="chat-bubble__content">{msg.content}</div>
                     <div className="chat-bubble__meta">
                       <span>{formatTime(msg.created_at)}</span>
-                      {msg.model_name && <span>· {msg.model_name}</span>}
+                      {msg.model_name && <span>&bull; {msg.model_name}</span>}
+                      {msg.role === 'assistant' && (
+                        <button
+                          type="button"
+                          className="chat-copy-btn"
+                          aria-label="Copy AI response"
+                          onClick={() => handleCopyMessage(msg.id, msg.content)}
+                        >
+                          {copiedId === msg.id ? (
+                            <>
+                              <Check size={12} color="var(--color-success)" /> Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={12} /> Copy
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -507,6 +573,7 @@ export function ChatPage() {
                   <span />
                   <span />
                   <span />
+                  <span className="chat-typing-text">HealthAssist AI is formulating clinical guidance...</span>
                 </div>
               </div>
             )}
@@ -523,7 +590,7 @@ export function ChatPage() {
             <textarea
               className="chat-textarea"
               rows={2}
-              placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
+              placeholder="Ask a health, symptom, or medical report question... (Enter to send, Shift+Enter for new line)"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -539,6 +606,9 @@ export function ChatPage() {
             >
               <Send size={17} /> Send
             </button>
+          </div>
+          <div className="chat-disclaimer-bar">
+            HealthAssist AI provides clinical education &amp; triage insights. Always consult a verified physician for definitive diagnosis or emergency treatment.
           </div>
         </GlassCard>
       </div>

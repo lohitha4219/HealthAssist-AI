@@ -340,30 +340,79 @@ export function LandingPage() {
             <div className="hero-visual animate-fade-up">
               <div className="hero-preview-shell glass-surface--strong">
                 <div className="hero-preview-topbar">
-                  <div className="hero-dots">
-                    <span />
-                    <span />
-                    <span />
+                  <div className="hero-preview-brand-tag">
+                    <span className="pulse-indicator">
+                      <span className="pulse-indicator__ping" />
+                      <span className="pulse-indicator__dot" />
+                    </span>
+                    <span style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--color-primary-deep)' }}>
+                      HealthAssist Intelligence &bull; Gemini Cloud AI
+                    </span>
                   </div>
-                  <span className="badge badge--cyan">Live Platform Modules</span>
+                  <span className="badge badge--cyan" style={{ fontSize: '0.72rem' }}>Active &amp; Online</span>
+                </div>
+
+                {/* Patient Health Snapshot Vitals */}
+                <div className="hero-vitals-strip">
+                  <div className="hero-vital-item">
+                    <span className="hero-vital-label">Heart Rate</span>
+                    <span className="hero-vital-val" style={{ color: '#059669' }}>72 <small>bpm</small></span>
+                    <span className="badge badge--success" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>Normal</span>
+                  </div>
+                  <div className="hero-vital-item">
+                    <span className="hero-vital-label">Blood Oxygen</span>
+                    <span className="hero-vital-val" style={{ color: '#0284c7' }}>99%</span>
+                    <span className="badge badge--cyan" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>Optimal</span>
+                  </div>
+                  <div className="hero-vital-item">
+                    <span className="hero-vital-label">Blood Pressure</span>
+                    <span className="hero-vital-val" style={{ color: '#072b4a' }}>120/80</span>
+                    <span className="badge badge--primary" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>Standard</span>
+                  </div>
+                </div>
+
+                {/* Simulated AI Triage Preview */}
+                <div className="hero-ai-dialogue glass-surface--subtle">
+                  <div className="hero-ai-dialogue-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="hero-preview-icon hero-preview-icon--blue" style={{ width: 28, height: 28 }}>
+                        <Sparkles size={14} />
+                      </span>
+                      <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--color-primary-deep)' }}>
+                        AI Symptom Guidance
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Just now</span>
+                  </div>
+                  <p className="hero-ai-dialogue-text">
+                    &quot;Your tension headache profile is mild. Recommended steps: 500ml hydration, screen break, and posture check.&quot;
+                  </p>
+                  <div className="hero-ai-dialogue-footer">
+                    <span className="badge badge--primary" style={{ fontSize: '0.72rem' }}>
+                      <UserCheck size={12} /> Dr. Vikas (Neurology)
+                    </span>
+                    <Link to="/doctors" className="hero-dialogue-cta">
+                      Consult Specialist <ArrowRight size={12} />
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="hero-preview-grid">
                   <Link to="/chat" className="hero-preview-tile glass-surface--subtle">
                     <div className="hero-preview-icon hero-preview-icon--blue">
-                      <MessageSquare size={20} />
+                      <MessageSquare size={18} />
                     </div>
                     <div>
                       <div className="hero-preview-label">AI Healthcare Assistant</div>
                       <div className="hero-preview-text">
-                        Instant health education, terminology explanations &amp; triage guidance
+                        Instant health education, terminology &amp; triage guidance
                       </div>
                     </div>
                   </Link>
 
                   <Link to="/symptom-analysis" className="hero-preview-tile glass-surface--subtle">
                     <div className="hero-preview-icon hero-preview-icon--cyan">
-                      <Stethoscope size={20} />
+                      <Stethoscope size={18} />
                     </div>
                     <div>
                       <div className="hero-preview-label">Structured Symptom Analysis</div>
@@ -375,7 +424,7 @@ export function LandingPage() {
 
                   <Link to="/medical-reports" className="hero-preview-tile glass-surface--subtle">
                     <div className="hero-preview-icon hero-preview-icon--red">
-                      <FileText size={20} />
+                      <FileText size={18} />
                     </div>
                     <div>
                       <div className="hero-preview-label">Medical Report Lab Parsing</div>

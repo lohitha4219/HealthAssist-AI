@@ -15,6 +15,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { healthService } from '../../services/healthService';
+import { healthcareService } from '../../services/healthcareService';
 import { extractApiError } from '../../services/apiClient';
 import {
   EmptyState,
@@ -27,6 +28,7 @@ import './DashboardPage.css';
 
 export function DashboardPage() {
   const [summary, setSummary] = useState(null);
+  const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -34,8 +36,12 @@ export function DashboardPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await healthService.getDashboardSummary();
+      const [data, appts] = await Promise.all([
+        healthService.getDashboardSummary(),
+        Promise.resolve(healthcareService.listMyAppointments?.()).catch(() => []),
+      ]);
       setSummary(data);
+      setAppointments(Array.isArray(appts) ? appts : []);
     } catch (err) {
       setError(extractApiError(err, 'Failed to load dashboard summary'));
     } finally {
@@ -174,6 +180,53 @@ export function DashboardPage() {
             </div>
           </GlassCard>
 
+          {/* Upcoming Doctor Appointments Card */}
+          <GlassCard>
+            <div className="dash-card-head">
+              <h2 className="dash-card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CalendarCheck size={18} color="var(--color-primary)" /> Upcoming Consultations
+              </h2>
+              <Link to="/appointments" className="auth-link">
+                View All ({appointments.length})
+              </Link>
+            </div>
+
+            {appointments.length === 0 ? (
+              <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <p style={{ margin: '0 0 10px', fontSize: '0.9rem' }}>No upcoming doctor appointments scheduled.</p>
+                <Link to="/appointments" className="btn btn--primary btn--sm">
+                  <CalendarCheck size={15} /> Book Appointment
+                </Link>
+              </div>
+            ) : (
+              <div className="dash-record-list">
+                {appointments.slice(0, 3).map((appt) => (
+                  <div key={appt.id} className="dash-record-row">
+                    <div>
+                      <div className="dash-record-row__title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <UserCheck size={15} color="var(--color-primary)" /> {appt.doctor_name}
+                      </div>
+                      <div className="dash-record-row__meta">
+                        {appt.doctor_specialty} • {appt.hospital_name} • {formatDate(appt.appointment_date)} at {appt.time_slot}
+                      </div>
+                    </div>
+                    <span
+                      className={`badge ${
+                        appt.status === 'confirmed'
+                          ? 'badge--success'
+                          : appt.status === 'pending'
+                          ? 'badge--warning'
+                          : 'badge--primary'
+                      }`}
+                    >
+                      {appt.status.toUpperCase()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassCard>
+
           {/* Recent Assessments & Reports */}
           <GlassCard>
             <div className="dash-card-head">
@@ -234,6 +287,25 @@ export function DashboardPage() {
                 ))}
               </div>
             )}
+          </GlassCard>
+
+          {/* Emergency AP Helpline Card */}
+          <GlassCard style={{ borderLeft: '4px solid var(--color-accent)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <span className="badge badge--danger">AP Emergency Care</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>24/7 Rapid Response</span>
+            </div>
+            <p style={{ margin: '0 0 10px', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+              In critical situations or acute medical distress, contact official Andhra Pradesh healthcare emergency hotlines:
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <a href="tel:108" className="btn btn--accent btn--sm">
+                Dial 108 (Ambulance)
+              </a>
+              <a href="tel:104" className="btn btn--glass btn--sm">
+                Dial 104 (Health Helpline)
+              </a>
+            </div>
           </GlassCard>
         </div>
 
@@ -309,6 +381,25 @@ export function DashboardPage() {
                 ))}
               </div>
             )}
+          </GlassCard>
+
+          {/* Emergency AP Helpline Card */}
+          <GlassCard style={{ borderLeft: '4px solid var(--color-accent)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <span className="badge badge--danger">AP Emergency Care</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>24/7 Rapid Response</span>
+            </div>
+            <p style={{ margin: '0 0 10px', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+              In critical situations or acute medical distress, contact official Andhra Pradesh healthcare emergency hotlines:
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <a href="tel:108" className="btn btn--accent btn--sm">
+                Dial 108 (Ambulance)
+              </a>
+              <a href="tel:104" className="btn btn--glass btn--sm">
+                Dial 104 (Health Helpline)
+              </a>
+            </div>
           </GlassCard>
         </div>
       </div>

@@ -74,7 +74,7 @@ export function registerSessionExpiredHandler(handler) {
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -140,8 +140,8 @@ apiClient.interceptors.response.use(
 
 export function extractApiError(error, fallback = 'Something went wrong. Please try again.') {
   if (!error?.response) {
-    if (error?.code === 'ECONNABORTED') {
-      return 'Request timed out. Please verify the backend service is responsive.';
+    if (error?.code === 'ECONNABORTED' || error?.name === 'AbortError') {
+      return 'Request timed out waiting for the AI cloud service. Please try again or verify cloud provider connectivity.';
     }
     return 'Unable to connect to the server. Please check your network connection or verify the backend is running.';
   }
@@ -160,11 +160,23 @@ export function extractApiError(error, fallback = 'Something went wrong. Please 
       })
       .join('. ');
   }
+  if (status === 401) {
+    return 'Your session has expired or authentication is invalid. Please log in again.';
+  }
+  if (status === 403) {
+    return 'You do not have permission to perform this clinical action.';
+  }
+  if (status === 404) {
+    return 'The requested conversation or healthcare resource could not be found.';
+  }
   if (status === 429) {
-    return 'Too many attempts. Please wait a moment before trying again.';
+    return 'AI service rate limit reached. Please wait a moment before trying again.';
+  }
+  if (status === 504) {
+    return 'AI cloud service response timed out. Please try again shortly.';
   }
   if (status >= 500) {
-    return 'The server encountered an unexpected error. Please try again shortly.';
+    return 'The healthcare service encountered an error. Please try again shortly.';
   }
   return fallback;
 }

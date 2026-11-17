@@ -21,6 +21,14 @@ body {
   overflow-x: hidden;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-primary-deep);
+  letter-spacing: var(--letter-spacing-heading);
+  font-weight: 750;
+  line-height: 1.25;
+  margin-top: 0;
+}
+
 img,
 svg {
   display: block;

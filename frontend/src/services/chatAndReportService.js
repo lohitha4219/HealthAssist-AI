@@ -36,16 +36,28 @@ export const chatService = {
   },
   async streamMessage(conversationId, content, onChunk, onDone, onError) {
     const { accessToken } = getStoredTokens();
-    const res = await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      },
-      body: JSON.stringify({ content }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    let res;
+    try {
+      res = await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ content }),
+        signal: controller.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (onError) onError(fetchErr);
+      throw fetchErr;
+    }
 
     if (!res.ok) {
+      clearTimeout(timeoutId);
       const errData = await res.json().catch(() => ({}));
       const err = new Error(errData.detail || `Server error (${res.status})`);
       if (onError) onError(err);
@@ -57,34 +69,38 @@ export const chatService = {
     let buffer = '';
     let streamError = null;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n\n');
-      buffer = lines.pop();
-      for (const block of lines) {
-        if (block.startsWith('data: ')) {
-          let payload;
-          try {
-            payload = JSON.parse(block.slice(6));
-          } catch {
-            continue;
-          }
-          if (payload.chunk && onChunk) {
-            onChunk(payload.chunk);
-          }
-          if (payload.error) {
-            streamError = new Error(payload.error);
-            if (onError) onError(streamError);
-            break;
-          }
-          if (payload.done && onDone) {
-            onDone(payload);
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop();
+        for (const block of lines) {
+          if (block.startsWith('data: ')) {
+            let payload;
+            try {
+              payload = JSON.parse(block.slice(6));
+            } catch {
+              continue;
+            }
+            if (payload.chunk && onChunk) {
+              onChunk(payload.chunk);
+            }
+            if (payload.error) {
+              streamError = new Error(payload.error);
+              if (onError) onError(streamError);
+              break;
+            }
+            if (payload.done && onDone) {
+              onDone(payload);
+            }
           }
         }
+        if (streamError) break;
       }
-      if (streamError) break;
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     if (streamError) {

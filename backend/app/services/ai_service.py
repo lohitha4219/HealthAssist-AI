@@ -81,7 +81,7 @@ class LocalAIService:
     def check_gemini(self) -> AIStatus:
         now = datetime.now(timezone.utc)
         api_key = (self.settings.GEMINI_API_KEY or "").strip()
-        model = (self.settings.GEMINI_MODEL or "").strip() or "gemini-2.5-flash"
+        model = (self.settings.GEMINI_MODEL or "").strip() or "gemini-3.1-flash-lite"
 
         if not api_key:
             return AIStatus(
@@ -416,7 +416,13 @@ class LocalAIService:
         if not api_key:
             raise AIUnavailableError("GEMINI_API_KEY is not configured.", status_code=503)
 
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                retry_options=types.HttpRetryOptions(attempts=1),
+                timeout=25000,
+            ),
+        )
 
         contents = []
         for msg in messages:
@@ -444,17 +450,26 @@ class LocalAIService:
             max_output_tokens=1000,
         )
 
-        # Retry logic with backoff for transient errors
-        last_exc: Optional[Exception] = None
-        for attempt in range(2):
+        candidate_models = [model_name]
+        for fallback in ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+
+        last_error_detail = "Failed to communicate with Google Gemini."
+        last_status_code = 502
+
+        for idx, current_model in enumerate(candidate_models):
+            is_last = idx == len(candidate_models) - 1
+            timeout_limit = min(25.0, float(self.settings.AI_TIMEOUT_SECONDS))
+
             try:
                 response = await asyncio.wait_for(
                     client.aio.models.generate_content(
-                        model=model_name,
+                        model=current_model,
                         contents=contents,
                         config=config,
                     ),
-                    timeout=float(self.settings.AI_TIMEOUT_SECONDS),
+                    timeout=timeout_limit,
                 )
                 text = (response.text or "").strip()
                 if not text:
@@ -465,44 +480,55 @@ class LocalAIService:
                 return AICompletionResult(
                     content=text,
                     provider="gemini",
-                    model=model_name,
+                    model=current_model,
                 )
-            except asyncio.TimeoutError as exc:
-                last_exc = exc
-                raise AIUnavailableError(
-                    "Google Gemini API timed out while generating a response.",
-                    status_code=504,
-                ) from exc
+            except asyncio.TimeoutError:
+                last_error_detail = f"Google Gemini API model '{current_model}' timed out."
+                last_status_code = 504
+                if is_last:
+                    break
+                logger.warning(
+                    f"Gemini model {current_model} timed out; attempting failover to {candidate_models[idx + 1]}"
+                )
+                continue
             except APIError as exc:
-                last_exc = exc
-                if exc.code == 429 or "RESOURCE_EXHAUSTED" in str(exc):
-                    raise AIUnavailableError(
-                        "Google Gemini API rate limit reached. Please wait a moment and retry.",
-                        status_code=429,
-                    ) from exc
                 if exc.code in (400, 401, 403) or "API_KEY_INVALID" in str(exc):
                     raise AIUnavailableError(
                         f"Google Gemini authentication error: {exc.message}. Please check GEMINI_API_KEY in backend/.env.",
                         status_code=502,
                     ) from exc
-                if attempt == 0 and exc.code in (500, 502, 503):
-                    await asyncio.sleep(1.0)
-                    continue
-                raise AIUnavailableError(
-                    f"Google Gemini API error ({exc.code}): {exc.message}",
-                    status_code=502,
-                ) from exc
-            except Exception as exc:
-                last_exc = exc
-                if attempt == 0:
-                    await asyncio.sleep(1.0)
-                    continue
-                raise AIUnavailableError(
-                    f"Gemini API request failed: {str(exc)}",
-                    status_code=502,
-                ) from exc
 
-        raise AIUnavailableError(f"Gemini request failed: {str(last_exc)}", status_code=502)
+                if exc.code == 429 or "RESOURCE_EXHAUSTED" in str(exc):
+                    last_error_detail = "Google Gemini API rate limit reached. Please wait a moment and retry."
+                    last_status_code = 429
+                elif exc.code in (503, 504) or "UNAVAILABLE" in str(exc) or "DEADLINE" in str(exc):
+                    last_error_detail = (
+                        f"Google Gemini API model '{current_model}' is currently overloaded. "
+                        "Please try again shortly."
+                    )
+                    last_status_code = 503
+                else:
+                    last_error_detail = f"Google Gemini API error ({exc.code}): {exc.message}"
+                    last_status_code = 502
+
+                if is_last:
+                    break
+
+                logger.warning(
+                    f"Gemini model {current_model} failed ({exc.code}); failing over to {candidate_models[idx + 1]}"
+                )
+                continue
+            except Exception as exc:
+                last_error_detail = f"Gemini API request failed: {str(exc)}"
+                last_status_code = 502
+                if is_last:
+                    break
+                logger.warning(
+                    f"Gemini request exception on {current_model}: {exc}; failing over to {candidate_models[idx + 1]}"
+                )
+                continue
+
+        raise AIUnavailableError(last_error_detail, status_code=last_status_code)
 
     async def _stream_gemini(
         self,
@@ -516,7 +542,16 @@ class LocalAIService:
         from google.genai.errors import APIError
 
         api_key = (self.settings.GEMINI_API_KEY or "").strip()
-        client = genai.Client(api_key=api_key)
+        if not api_key:
+            raise AIUnavailableError("GEMINI_API_KEY is not configured.", status_code=503)
+
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                retry_options=types.HttpRetryOptions(attempts=1),
+                timeout=25000,
+            ),
+        )
 
         contents = []
         for msg in messages:
@@ -544,36 +579,76 @@ class LocalAIService:
             max_output_tokens=1000,
         )
 
-        try:
-            stream = await client.aio.models.generate_content_stream(
-                model=model_name,
-                contents=contents,
-                config=config,
-            )
-            async for chunk in stream:
-                chunk_text = getattr(chunk, "text", "") or ""
-                if chunk_text:
-                    yield chunk_text
-        except asyncio.TimeoutError as exc:
-            raise AIUnavailableError(
-                "Google Gemini API timed out while streaming response.", status_code=504
-            ) from exc
-        except APIError as exc:
-            if exc.code == 429 or "RESOURCE_EXHAUSTED" in str(exc):
-                raise AIUnavailableError(
-                    "Google Gemini API rate limit reached. Please wait a moment and retry.",
-                    status_code=429,
-                ) from exc
-            if exc.code in (400, 401, 403) or "API_KEY_INVALID" in str(exc):
-                raise AIUnavailableError(
-                    f"Google Gemini authentication error: {exc.message}. Please check GEMINI_API_KEY in backend/.env.",
-                    status_code=502,
-                ) from exc
-            raise AIUnavailableError(f"Gemini stream error ({exc.code}): {exc.message}", status_code=502) from exc
-        except Exception as exc:
-            raise AIUnavailableError(f"Gemini stream failed: {str(exc)}", status_code=502) from exc
-        except Exception as exc:
-            raise AIUnavailableError(f"Gemini stream failed: {str(exc)}", status_code=502) from exc
+        candidate_models = [model_name]
+        for fallback in ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+
+        last_error_detail = "Failed to open Gemini stream."
+        last_status_code = 502
+
+        for idx, current_model in enumerate(candidate_models):
+            is_last = idx == len(candidate_models) - 1
+            chunks_yielded = 0
+            try:
+                stream = await asyncio.wait_for(
+                    client.aio.models.generate_content_stream(
+                        model=current_model,
+                        contents=contents,
+                        config=config,
+                    ),
+                    timeout=min(20.0, float(self.settings.AI_TIMEOUT_SECONDS)),
+                )
+                async for chunk in stream:
+                    chunk_text = getattr(chunk, "text", "") or ""
+                    if chunk_text:
+                        chunks_yielded += 1
+                        yield chunk_text
+                return
+            except asyncio.TimeoutError as exc:
+                if chunks_yielded > 0:
+                    raise AIUnavailableError(
+                        "Google Gemini API stream timed out while receiving response.", status_code=504
+                    ) from exc
+                last_error_detail = f"Gemini stream opening timed out for model '{current_model}'."
+                last_status_code = 504
+                if is_last:
+                    break
+                continue
+            except APIError as exc:
+                if chunks_yielded > 0:
+                    raise AIUnavailableError(
+                        f"Gemini stream interrupted ({exc.code}): {exc.message}", status_code=502
+                    ) from exc
+                if exc.code in (400, 401, 403) or "API_KEY_INVALID" in str(exc):
+                    raise AIUnavailableError(
+                        f"Google Gemini authentication error: {exc.message}. Please check GEMINI_API_KEY in backend/.env.",
+                        status_code=502,
+                    ) from exc
+                if exc.code == 429 or "RESOURCE_EXHAUSTED" in str(exc):
+                    last_error_detail = "Google Gemini API rate limit reached. Please wait a moment and retry."
+                    last_status_code = 429
+                elif exc.code in (503, 504) or "UNAVAILABLE" in str(exc) or "DEADLINE" in str(exc):
+                    last_error_detail = (
+                        f"Google Gemini model '{current_model}' is currently overloaded. Please retry."
+                    )
+                    last_status_code = 503
+                else:
+                    last_error_detail = f"Gemini stream error ({exc.code}): {exc.message}"
+                    last_status_code = 502
+                if is_last:
+                    break
+                continue
+            except Exception as exc:
+                if chunks_yielded > 0:
+                    raise AIUnavailableError(f"Gemini stream failed: {str(exc)}", status_code=502) from exc
+                last_error_detail = f"Gemini stream failed: {str(exc)}"
+                last_status_code = 502
+                if is_last:
+                    break
+                continue
+
+        raise AIUnavailableError(last_error_detail, status_code=last_status_code)
 
     async def _call_openai_chat(
         self,

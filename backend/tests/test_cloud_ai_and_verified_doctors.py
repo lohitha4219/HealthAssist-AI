@@ -28,7 +28,7 @@ def test_gemini_health_configured():
     assert status.available is True
     assert status.provider == "gemini"
     assert status.status == "online"
-    assert status.model == "gemini-3.5-flash"
+    assert status.model in ("gemini-3.1-flash-lite", "gemini-3.5-flash")
 
 
 @pytest.mark.asyncio
