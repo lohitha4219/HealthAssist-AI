@@ -23,6 +23,86 @@ A full-stack healthcare information, hospital & doctor discovery, appointment bo
 
 ---
 
+## Technologies Used
+
+### 1. Frontend Technologies
+
+| Technology | Purpose |
+|---|---|
+| HTML5 | Webpage structure |
+| CSS3 | Styling, responsive layouts, animations and glassmorphism UI |
+| JavaScript (ES6+) | Frontend application logic |
+| React 18 | Component-based user interface |
+| Vite 6 | Frontend development server and build tool |
+| React Router 7 | Client-side navigation and routing |
+| Axios | HTTP requests and backend API integration |
+| Recharts | Interactive charts and health analytics |
+| Lucide React | Icons and interface elements |
+
+### 2. Backend Technologies
+
+| Technology | Purpose |
+|---|---|
+| Python 3.12 | Backend programming language |
+| FastAPI | REST API development |
+| Uvicorn | ASGI application server |
+| SQLAlchemy 2.x | ORM and database operations |
+| Alembic | Database migrations |
+| Pydantic v2 | Data validation and request/response schemas |
+| PyJWT | JWT authentication |
+| bcrypt | Password hashing |
+| psycopg 3 | PostgreSQL database connectivity |
+
+### 3. Database
+
+- **PostgreSQL 18** — Relational database management.
+- **SQLAlchemy** — Database ORM and query management.
+- **Alembic** — Database schema versioning and migrations.
+
+### 4. Artificial Intelligence & Processing
+
+| Technology | Purpose |
+|---|---|
+| Google Gemini | Cloud-based AI healthcare chatbot integration |
+| google-genai | Official Google Gemini SDK |
+| OpenAI-compatible API | Alternative cloud AI provider integration |
+| llama.cpp | Local AI model support |
+| Ollama | Local AI model execution |
+| PyPDF | PDF medical report text extraction |
+| Pillow | Image processing |
+
+### 5. Authentication & Security
+
+- JSON Web Token (JWT) authentication.
+- Refresh-token rotation.
+- bcrypt password hashing.
+- Role-based access control.
+- Protected API endpoints.
+- Input validation using Pydantic.
+- Secure file upload validation.
+
+### 6. Testing Technologies
+
+| Technology | Purpose |
+|---|---|
+| Pytest | Backend testing |
+| Vitest | Frontend testing |
+| React Testing Library | React component testing |
+| Testing Library User Event | User interaction testing |
+| HTTPX | API testing |
+
+### 7. Deployment & Development Tools
+
+| Tool | Purpose |
+|---|---|
+| Git | Version control |
+| GitHub | Source code repository |
+| Vercel | Frontend deployment |
+| Render | Backend and PostgreSQL hosting |
+| Swagger UI | API documentation and testing |
+
+---
+
 ## Portals & Access Architecture
 
 HealthAssist AI is built strictly around **two authenticated portals** alongside the **public website**:
